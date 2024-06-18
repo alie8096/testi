@@ -38,7 +38,7 @@ jobs:
           github-token: ${{ secrets.GH_TOKEN }}
           script: |
             const prNumber = ${{ steps.demo-1.outputs.pull-request-number }};
-            await github.pulls.createReview({
+            await octokit.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: prNumber,
