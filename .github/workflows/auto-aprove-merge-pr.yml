@@ -37,8 +37,8 @@ jobs:
         with:
           github-token: ${{ secrets.GH_TOKEN }}
           script: |
-            const prNumber = ${{ steps.demo-1.outputs.pull-request-number }};
-            const { getOctokit, context } = require('@actions/github');
+            const prNumber = ${{ steps.demo-1.outputs['pull-request-number'] }};
+            const { getOctokit } = require('@actions/github');
             const octokit = getOctokit('${{ secrets.GITHUB_TOKEN }}');
             await octokit.pulls.createReview({
               owner: context.repo.owner,
@@ -51,5 +51,5 @@ jobs:
         uses: juliangruber/merge-pull-request-action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          number: ${{ steps.demo-1.outputs.pull-request-number }}
+          number: ${{ steps.demo-1.outputs['pull-request-number'] }}
           method: squash
