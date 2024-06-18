@@ -3,7 +3,7 @@ name: Demo to create automatic PR
 on:
   push:
     branches:
-      - main
+      - seasons-source
 
 jobs:
   updateAuthor:
@@ -19,28 +19,33 @@ jobs:
         run: echo ${{ env.GIT_COMMIT_AUTHOR_NAME }} > AUTHOR
 
       - name: Raise PR
-        id: demo-1
+        id: create-pr
         uses: peter-evans/create-pull-request@v3
         with:
           branch: "auto-per-branch"
-          base: main
+          base: seasons-source
           title: "Auto PR"
           committer: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}>
           author: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}>
           body: |
             This is to show automatic PR creation
-          token: ${{ secrets.GH_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           delete-branch: true
 
+      - name: Print PR number
+        run: echo "PR number is ${{ steps.create-pr.outputs.pull-request-number }}"
+
       - name: Approve Pull Request
+        if: steps.create-pr.outputs.pull-request-number != ''
         uses: juliangruber/approve-pull-request-action@v1
         with:
           github-token: ${{ secrets.GH_TOKEN }}
-          number: ${{ steps.demo-1.outputs.pull-request-number }}
+          number: ${{ steps.create-pr.outputs.pull-request-number }}
 
       - name: Merge Pull Request
+        if: steps.create-pr.outputs.pull-request-number != ''
         uses: juliangruber/merge-pull-request-action@v1
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          number: ${{ steps.demo-1.outputs.pull-request-number }}
+          github-token: ${{ secrets.GH_TOKEN }}
+          number: ${{ steps.create-pr.outputs.pull-request-number }}
           method: squash
