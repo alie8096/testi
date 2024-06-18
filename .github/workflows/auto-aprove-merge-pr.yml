@@ -13,17 +13,17 @@ jobs:
         uses: actions/checkout@v2
 
       - name: extract git commit data
-        uses: rlespinasse/git-commit-data-action@v1.x
+        uses: rlespinasse/git-commit-data-action@v1.0.0
 
       - name: Update author information
         run: echo ${{ env.GIT_COMMIT_AUTHOR_NAME }} > AUTHOR
 
       - name: Raise PR
-        id: create-pr
+        id: demo-1
         uses: peter-evans/create-pull-request@v3
         with:
           branch: "auto-per-branch"
-          base: seasons-source
+          base: seasons-sources
           title: "Auto PR"
           committer: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}>
           author: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}>
@@ -32,20 +32,15 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           delete-branch: true
 
-      - name: Print PR number
-        run: echo "PR number is ${{ steps.create-pr.outputs.pull-request-number }}"
-
       - name: Approve Pull Request
-        if: steps.create-pr.outputs.pull-request-number != ''
         uses: juliangruber/approve-pull-request-action@v1
         with:
           github-token: ${{ secrets.GH_TOKEN }}
-          number: ${{ steps.create-pr.outputs.pull-request-number }}
+          number: ${{ steps.demo-1.outputs.pull-request-number }}
 
       - name: Merge Pull Request
-        if: steps.create-pr.outputs.pull-request-number != ''
         uses: juliangruber/merge-pull-request-action@v1
         with:
-          github-token: ${{ secrets.GH_TOKEN }}
-          number: ${{ steps.create-pr.outputs.pull-request-number }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          number: ${{ steps.demo-1.outputs.pull-request-number }}
           method: squash
