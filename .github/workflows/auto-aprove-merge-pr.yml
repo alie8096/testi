@@ -38,8 +38,8 @@ jobs:
           github-token: ${{ secrets.GH_TOKEN }}
           script: |
             const prNumber = ${{ steps.demo-1.outputs['pull-request-number'] }};
-            const { getOctokit } = require('@actions/github');
-            const octokit = getOctokit('${{ secrets.GITHUB_TOKEN }}');
+            const { GitHub, context } = require('@actions/github');
+            const octokit = new GitHub({ token: '${{ secrets.GITHUB_TOKEN }}' });
             await octokit.pulls.createReview({
               owner: context.repo.owner,
               repo: context.repo.repo,
