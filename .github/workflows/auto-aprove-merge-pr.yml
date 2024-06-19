@@ -1,47 +1,27 @@
-name: Auto Merge Markdown Files
+name: Auto-merge PRs on seasons-source
 
 on:
   pull_request:
     branches:
       - seasons-source
-  push:
-    branches:
-      - seasons-source
 
 jobs:
-  build:
+  auto-merge:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - name: Check out code
+        uses: actions/checkout@v3
 
-      - name: Check changed files
-        id: check_files
-        run: |
-          git diff --name-only HEAD^ HEAD > changed_files.txt
-          cat changed_files.txt
-        shell: bash
+      - name: Check if PR is mergeable
+        uses: peter-evans/commit-validation@v2
+        with:
+          required-status-checks: context
 
-      - name: Check if only Markdown files changed
-        id: check_markdown
-        run: |
-          grep '\.md$' changed_files.txt > markdown_files.txt
-          cat markdown_files.txt
-        shell: bash
+      - name: Merge PR
+        uses: peter-evans/merge-pull-request@v2
+        with:
+          merge-method: squash
+          commit-message: "Merge pull request #${{ github.event.pull_request.number }}"
 
-      - name: Merge pull request
-        if: steps.check_markdown.outputs.markdown_files != ''
-        run: |
-          git fetch origin ${{ github.event.pull_request.head.ref }}
-          git checkout ${{ github.event.pull_request.head.ref }}
-          git merge ${{ github.event.pull_request.base.ref }}
-          git push origin ${{ github.event.pull_request.head.ref }}
-
-      - name: Close pull request
-        if: steps.check_markdown.outputs.markdown_files != ''
-        run: |
-          curl \
-            -X PATCH \
-            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            -d '{"state": "closed"}' \
-            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
+      - name: Close PR
+        uses: peter-evans/close-pull-request@v2
