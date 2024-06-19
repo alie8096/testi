@@ -4,6 +4,10 @@ on:
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   auto-merge:
@@ -14,18 +18,18 @@ jobs:
 
       - name: Check if PR is mergeable
         run: |
-          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
-            # Your validation script or checks here
-            echo "Validation checks passed."
+          if [ "${{ github.event.pull_request.mergeable }}" != "true" ]; then
+            echo "PR is not mergeable"
+            exit 1
           fi
 
       - name: Merge PR
-        uses: actions/github-script@v4
+        uses: actions/github-script@v6
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const prNumber = context.payload.pull_request.number;
-            const merge = await github.pulls.merge({
+            const merge = await github.rest.pulls.merge({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: prNumber,
@@ -33,10 +37,3 @@ jobs:
               commit_title: `Merge pull request #${prNumber}`,
             });
             console.log(merge.data);
-
-      - name: Close PR
-        run: |
-          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
-            # Close the pull request using GitHub API or CLI
-            gh pr close $GITHUB_REF
-          fi
