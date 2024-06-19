@@ -1,9 +1,9 @@
-name: Auto-merge PRs on seasons-source
+name: Auto-merge PRs on main
 
 on:
   pull_request:
     branches:
-      - seasons-source
+      - main
 
 jobs:
   auto-merge:
