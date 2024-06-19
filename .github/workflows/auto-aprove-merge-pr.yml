@@ -30,7 +30,7 @@ jobs:
         shell: bash
 
       - name: Merge pull request
-        if: steps.check_markdown.outputs.markdown_files != ''
+        if: github.event_name == 'pull_request' && steps.check_markdown.outputs.markdown_files != ''
         run: |
           git fetch origin ${{ github.event.pull_request.head.ref }}
           git checkout ${{ github.event.pull_request.head.ref }}
@@ -38,7 +38,7 @@ jobs:
           git push origin ${{ github.event.pull_request.head.ref }}
 
       - name: Close pull request
-        if: steps.check_markdown.outputs.markdown_files != ''
+        if: github.event_name == 'pull_request' && steps.check_markdown.outputs.markdown_files != ''
         run: |
           curl \
             -X PATCH \
