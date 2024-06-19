@@ -1,46 +1,47 @@
-name: Demo to create automatic PR
+name: Auto Merge Markdown Files
 
 on:
+  pull_request:
+    branches:
+      - seasons-source
   push:
     branches:
       - seasons-source
 
 jobs:
-  updateAuthor:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: checking out code
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: extract git commit data
-        uses: rlespinasse/git-commit-data-action@v1.0.0
+      - name: Check changed files
+        id: check_files
+        run: |
+          git diff --name-only HEAD^ HEAD > changed_files.txt
+          cat changed_files.txt
+        shell: bash
 
-      - name: Update author information
-        run: echo ${{ env.GIT_COMMIT_AUTHOR_NAME }} > AUTHOR
+      - name: Check if only Markdown files changed
+        id: check_markdown
+        run: |
+          grep '\.md$' changed_files.txt > markdown_files.txt
+          cat markdown_files.txt
+        shell: bash
 
-      - name: Raise PR
-        id: demo-1
-        uses: peter-evans/create-pull-request@v3
-        with:
-          branch: "auto-per-branch"
-          base: seasons-sources
-          title: "Auto PR"
-          committer: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}>
-          author: ${{ env.GIT_COMMIT_AUTHOR_NAME }} <${{ env.GIT_COMMIT_AUTHOR_EMAIL }}>
-          body: |
-            This is to show automatic PR creation
-          token: ${{ secrets.GITHUB_TOKEN }}
-          delete-branch: true
+      - name: Merge pull request
+        if: steps.check_markdown.outputs.markdown_files != ''
+        run: |
+          git fetch origin ${{ github.event.pull_request.head.ref }}
+          git checkout ${{ github.event.pull_request.head.ref }}
+          git merge ${{ github.event.pull_request.base.ref }}
+          git push origin ${{ github.event.pull_request.head.ref }}
 
-      - name: Approve Pull Request
-        uses: juliangruber/approve-pull-request-action@v1
-        with:
-          github-token: ${{ secrets.GH_TOKEN }}
-          number: ${{ steps.demo-1.outputs.pull-request-number }}
-
-      - name: Merge Pull Request
-        uses: juliangruber/merge-pull-request-action@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          number: ${{ steps.demo-1.outputs.pull-request-number }}
-          method: squash
+      - name: Close pull request
+        if: steps.check_markdown.outputs.markdown_files != ''
+        run: |
+          curl \
+            -X PATCH \
+            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            -d '{"state": "closed"}' \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
